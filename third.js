@@ -1,3 +1,299 @@
+/*
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFID Scanner</title>
+  <style>
+    @font-face {
+      font-family: 'octarine-bold';
+      src: url('./octarine-bold.otf') format('opentype');
+      font-weight: bold;
+      font-style: normal;
+    }
+
+    body {
+      font-family: Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      user-select: none;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    #scanners {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 15px;
+      width: 95%;
+      height: 95%;
+    }
+    .name-container {
+      max-width: 100%; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .scanner {
+      background: linear-gradient(to right, #4A90E2 55%, rgba(255, 255, 255, 1) 30%);
+      border: 5px solid #ccc;
+      border-radius: 8px;
+      padding: 40px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.5em;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+    .category {
+      font-size: 0.8em;
+      color: gray;
+      margin: 0;
+      margin-top: 20%;
+    }
+    .scanner.waiting {
+      border-color: #318CE7;
+    }
+    .scanner.error {
+      background-color: #e69595;
+      border-color: #e23636;
+    }
+    .scanner.success {
+      border-color: #6cc070;
+    }
+    .scanner::before {
+      content: "";
+      background-image: url('./tcnhs.png'); 
+      background-size: 50%;
+      background-repeat: no-repeat;
+      background-position: center;
+      opacity: 0.1; 
+      position: absolute;
+      top: 50%;
+      left: 25%;
+      transform: translate(-25%, -50%);
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    .scanner-number {
+      position: absolute;
+      top: 10px;
+      left: 10px; 
+      color: #fff;
+      font-size: 1.2em;
+      font-weight: bold;
+      font-family: 'octarine-bold';
+      z-index: 2;
+    }
+    .scanner-content {
+      position: absolute;
+      z-index: 2;
+      width: 50%;
+      top: 10%;
+      height: 50%;
+      right: 5%; 
+      text-align: right; 
+    }
+    .scanner-input {
+      width: 80%; 
+      height: 30%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .scanner-input-professional {
+      width: 38%; 
+      padding: 8px;
+      margin-bottom: 20px;
+      font-size: 1em;
+      border: 2px solid #007FFF;
+      border-radius: 8px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      position: absolute;
+      top: 40px; 
+      left: 78%;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+
+    .scanner-input-professional:focus {
+      border-color: #0056b3;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      outline: none;
+    }
+    .scanner-content p {
+      font-weight: 600;
+      margin-top: 3px; 
+    }
+    .profile-image {
+      width: 55%;
+      height: 100%;
+      left: 0%; 
+      object-fit: cover;
+      position: absolute;
+      bottom: 0;
+      z-index: 1;
+      display: none;
+      opacity: 1;
+    }
+    @keyframes scan-highlight-waiting {
+      0% {
+        border-color: #ffeb3b;
+        background-color: #fffde7;
+      }
+      100% {
+        border-color: #4a90e2;
+        background-color: #fff;
+      }
+    }
+    @keyframes scan-highlight-success {
+      0% {
+        border-color: #6cc070;
+        background-color: #e8f5e9;
+      }
+      100% {
+        border-color: #4a90e2;
+        background-color: #fff;
+      }
+    }
+    @keyframes scan-highlight-error {
+      0% {
+        border-color: #e23636;
+        background-color: #f04962;
+      }
+      100% {
+        border-color: #4a90e2;
+        background-color: #fff;
+      }
+    }
+    .scanner.highlight-waiting {
+      animation: scan-highlight-waiting 1s ease;
+    }
+    .scanner.highlight-success {
+      animation: scan-highlight-success 1s ease;
+    }
+    .scanner.highlight-error {
+      animation: scan-highlight-error 1s ease;
+    }
+    .waiting-text {
+      position: absolute;
+      top: 80%;
+      left: 70%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      margin: 0; 
+    }
+    .scanner.error {
+      background: linear-gradient(to right, #e23636 55%, rgba(255, 255, 255, 1) 30%); 
+      border-color: #e23636;
+    }
+    .error-text {
+      position: absolute;
+      top: 80%;
+      left: 70%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      margin: 0; 
+      font-size: 1.5em; 
+      color: red; 
+    }
+  </style>
+</head>
+<body>
+  <div id="scanners">
+    <div id="scanner-0" class="scanner waiting">
+      <div class="scanner-number">1</div>
+      <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+    <div id="scanner-1" class="scanner waiting">
+      <div class="scanner-number">2</div>
+      <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+    <div id="scanner-2" class="scanner waiting">
+      <div class="scanner-number">3</div>
+      <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+    <div id="scanner-3" class="scanner waiting">
+      <div class="scanner-number">4</div>
+      <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+    <div id="scanner-4" class="scanner waiting">
+      <div class="scanner-number">5</div>
+      <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+    <div id="scanner-5" class="scanner waiting">
+      <div class="scanner-number">6</div>
+      <div class="scanner-content2">
+        <input type="text" class="scanner-input-professional" placeholder="Enter ID" maxlength="12">
+      </div>
+        <div class="scanner-content">
+        <p class="waiting-text">Waiting for Scan</p>
+      </div>
+      <img class="profile-image" src="" alt="Profile Image">
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const waitingTexts = document.querySelectorAll('.waiting-text');
+      waitingTexts.forEach(text => {
+        let dotCount = 0;
+        let increasing = true;
+        setInterval(() => {
+          if (increasing) {
+            dotCount++;
+            if (dotCount === 3) increasing = false;
+          } else {
+            dotCount--;
+            if (dotCount === 0) increasing = true;
+          }
+          text.textContent = 'Waiting for Scan' + '.'.repeat(dotCount);
+        }, 500);
+      });
+    });
+  </script>
+</body>
+</html>
+
+    CODE ABOVE IS THE CODE FOR THE HTML
+    WHILE THE CODE BELOW IS THE BACKBONE CODE FOR IT!
+*/
+
 const { ipcRenderer } = require('electron');
 
 // Toggle for alternating between default images
